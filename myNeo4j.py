@@ -313,6 +313,126 @@ class App:
 
         db.run(query, email_vendedor=email_vendedor)
 
+    ##### FUNÇÕES DE PRODUTO #####
+    # CREATE
+    def createProduto(self):
+        with self.driver.session(database="neo4j") as session:
+            session.execute_write(self.createProduto)
+
+    @staticmethod
+    def _createProduto(db):
+        print("\nCriação de Produto")
+
+        query = (
+            "CREATE (object:product { nome: $nome_produto, preco: $preco_produto, quantidade: $quantidade_produto, $emailVendedor: $email_vendedor })"
+        )
+
+        nome_produto = input("Insira o nome do produto: ")
+        preco_produto = input("Insira o preço: ")
+        quantidade_produto = input("Insira a quantidade do produto: ")
+        email_vendedor = input("Insira o email do Vendedor: ")
+
+        result = db.run(query,
+                        nome_produto=nome_produto,
+                        preco_produto=preco_produto,
+                        quantidade_produto=quantidade_produto,
+                        email_vendedor=email_vendedor
+                        )
+
+        return [{"object": row["object"]["nome"]["preco"]["quantidade"]["emailVendedor"]}
+                for row in result]
+
+     # FIND
+    def findProdutos(self):
+        with self.driver.session(database="neo4j") as session:
+            session.read_transaction(self._findProdutos)
+
+    @staticmethod
+    def _findProdutos(db):
+        print("\nEncontrar todos os Produtos")
+
+        query = "MATCH (p:product) RETURN p"
+
+        result = db.run(query)
+
+        return [print([row]) for row in result]
+
+    def findProduto(self):
+        with self.driver.session(database="neo4j") as session:
+            session.read_transaction(self._findProduto)
+
+    @staticmethod
+    def _findProduto(db):
+        print("\nEncontrar o Produto pelo Nome")
+
+        nome_produto = input("Insira o nome do Produto: ")
+
+        query = "MATCH (p:product) WHERE p.nome = $nome_produto RETURN p"
+
+        result = db.run(query,
+                        nome_produto=nome_produto
+                        )
+
+        return [print([row]) for row in result]
+
+    # UPDATE
+    def updateProduct(self):
+        with self.driver.session(database="neo4j") as session:
+            session.execute_write(self._updateProduct)
+
+    @staticmethod
+    def _updateProduct(db):
+        print("\nAtualizar Produto")
+
+        nome_produto = input("Insira o nome do Produto: ")
+
+        print('''\nSelecione o que deseja atualizar\n
+                1 - Nome
+                2 - Preço
+                3 - Quantidade
+            ''')
+
+        option = input("Insira o número da opção: ")
+
+        while int(option) < 1 or int(option) > 4:
+            print("Opção Inválida")
+            option = input("Insira o número da opção: ")
+
+        if option == "1":
+            option = "nome"
+        elif option == "2":
+            option = "preco"
+        elif option == "3":
+            option = "quantidade"
+
+        new_value = input("Insira o novo nome do Produto: ")
+
+        query = (
+            "MATCH (p:produto) WHERE p.nome = $nome_produto SET p." +
+            option + " = $new_value"
+        )
+
+        db.run(query,
+               nome_produto=nome_produto,
+               option=option,
+               new_value=new_value
+               )
+
+    # DELETE
+    def deleteProduto(self):
+        with self.driver.session(database="neo4j") as session:
+            session.write_transaction(self._deleteProduto)
+
+    @staticmethod
+    def deleteProduto(db):
+        print("\nDeletar Produto")
+
+        nome_produto = input("Insira o nome do Produto: ")
+
+        query = "MATCH (p:produto) WHERE p.nome = $nome_produto DETACH DELETE p"
+
+        db.run(query, nome_produto=nome_produto)
+
 
 if __name__ == "__main__":
     uri = "neo4j+s://b17f719c.databases.neo4j.io"
