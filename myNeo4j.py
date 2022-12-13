@@ -433,6 +433,47 @@ class App:
 
         db.run(query, nome_produto=nome_produto)
 
+    ###### RELAÇÃO DAS FUNÇÕES ######
+    # Vendedor com Produto
+    def vendProduto(self):
+        with self.driver.session(database="neo4j") as session:
+            session.execute_write(self._vendProduto)
+
+    @staticmethod
+    def vendProduto(db):
+        vendedor_email = input("Insert the vendor's document number: ")
+        nome_produto = input("Insert the product's name: ")
+
+        query = (
+            "MATCH (v:vendedor) WHERE v.email = $vendedor_email MATCH (p:produto) WHERE p.nome = $nome_produto CREATE (p)-[:VENDE]->(v) RETURN p, v")
+
+        result = db.run(query,
+                        vendedor_email=vendedor_email,
+                        nome_produto=nome_produto
+                        )
+
+        return [{"p": row["p"]["nome"], "v": row["v"]["email"]} for row in result]
+
+    # Usuario com Produto
+    def userProduto(self):
+        with self.driver.session(database="neo4j") as session:
+            session.execute_write(self._userProduto)
+
+    @staticmethod
+    def _userProduto(db):
+        cpf_user = input("Insira o cpf do usuário: ")
+        nome_produto = input("Insira o nome do produto: ")
+
+        query = (
+            "MATCH (u:user) WHERE u.cpf = $cpf_user MATCH (p:produto) WHERE p.nome = $nome_produto CREATE (u)-[:COMPRA]->(p) RETURN p, u")
+
+        result = db.run(query,
+                        cpf_user=cpf_user,
+                        nome_produto=nome_produto
+                        )
+
+        return [{"p": row["p"]["nome"], "u": row["u"]["cpf"]} for row in result]
+
 
 if __name__ == "__main__":
     uri = "neo4j+s://b17f719c.databases.neo4j.io"
